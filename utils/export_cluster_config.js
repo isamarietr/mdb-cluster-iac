@@ -14,6 +14,7 @@ const path = require("path");
 const ATLAS_ORIGIN = "https://cloud.mongodb.com";
 const ATLAS_BASE_PATH = "/api/atlas/v2";
 const ACCEPT = "application/vnd.atlas.2024-08-05+json";
+const TFVAR_FILE = "../terraform/cluster.auto.tfvars.json";
 
 function env(name) {
   for (const key of [
@@ -270,8 +271,9 @@ async function main() {
   const projectId = options["project-id"] || env("PROJECT_ID");
   const clusterName =
     options.cluster || process.env.CLUSTER_NAME || process.env.TF_VAR_CLUSTER_NAME;
+  const fileName = clusterName ? `../config/${clusterName}.auto.tfvars.json` : TFVAR_FILE;
   const output =
-    options.output || path.join(__dirname, "terraform", "cluster.auto.tfvars.json");
+    options.output || path.join(__dirname, fileName);
   const missing = [
     ["--public-key/ATLAS_PUBLIC_KEY", publicKey],
     ["--private-key/ATLAS_PRIVATE_KEY", privateKey],
@@ -309,6 +311,7 @@ async function main() {
 
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, `${JSON.stringify(outputData, null, 2)}\n`, "utf8");
+    fs.copyFileSync(output, path.join(__dirname, TFVAR_FILE));
     const shards = outputData.cluster.replication_specs.length;
     console.log(`[ok] captured cluster '${clusterName}' (${shards} shard(s)) -> ${output}`);
     if (outputData.search_deployment) {

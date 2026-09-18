@@ -1,5 +1,10 @@
 # Local secrets — never commit
 env.sh
+node_modules/
+package-lock.json
+
+# Cluster configs
+config/*.json
 
 # Terraform state & generated var files
 terraform/terraform.tfstate
@@ -8,7 +13,3 @@ terraform/*.auto.tfvars.json
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform/.terraform.tfstate.lock.info
-
-# Exported cluster/index snapshots
-_cluster_export.json
-_all_indexes.json
