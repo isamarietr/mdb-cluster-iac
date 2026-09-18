@@ -1,14 +1,15 @@
 # MongoDB Atlas Cluster Setup and Teardown
 
-Capture an Atlas cluster before destruction and recreate its topology,
-collections, indexes, Search indexes, and sharding configuration.
+Provision, export, restore, and destroy a MongoDB Atlas cluster while preserving
+its topology, collections, indexes, Search indexes, and sharding configuration.
 
 ## Prerequisites
 
 - [Terraform](https://developer.hashicorp.com/terraform/install)
 - Node.js 16.20 or newer and npm
 - An Atlas API key with project access
-- A database user whose URI can create collections and indexes, and administer sharding
+- A MongoDB user that can read all databases and administer collections,
+  indexes, Search indexes, and sharding
 
 ## Install
 
@@ -17,71 +18,72 @@ npm install
 cp sample.env.sh env.sh
 ```
 
-Fill in the Atlas credentials, project, cluster name, and authenticated
+Set the Atlas credentials, project ID, cluster name, and authenticated
 `MONGODB_URI` in `env.sh`, then load it:
 
 ```sh
 source env.sh
 ```
 
-`env.sh` and generated exports are gitignored.
-
 ## Quick Start
 
-Create the Atlas cluster from the captured Terraform configuration and restore
-collections, indexes, Search indexes, and sharding:
+### 1. Set Up
+
+Create the cluster from a captured configuration, or use the default M30 replica
+set when no captured configuration exists:
 
 ```sh
-./set_up.sh "mongodb+srv://<user>:<password>@<cluster>/"
+./1_set_up.sh
 ```
 
-Capture the live cluster configuration and indexes, then destroy the Terraform
-resources:
+### 2. Restore (optional)
+
+Restore collections, regular indexes, Search indexes, and sharding:
 
 ```sh
-./tear_down.sh
+./2_restore.sh
 ```
 
-Both scripts require the authenticated MongoDB URI as an argument:
+You can provide the authenticated MongoDB URI directly:
 
 ```sh
-./set_up.sh "mongodb+srv://<user>:<password>@<cluster>/"
-./tear_down.sh "mongodb+srv://<user>:<password>@<cluster>/"
+./2_restore.sh "mongodb+srv://<user>:<password>@<cluster>/"
 ```
 
-Commands run sequentially and stop on the first failure. Teardown writes
-`terraform/cluster.auto.tfvars.json` and `_cluster_export.json`; both are
-required for the next setup.
+### 3. Tear Down
 
-## Cluster Configuration Behavior
+Export the live configuration and indexes, then destroy the Terraform resources:
 
-### No Existing Cluster Export
+```sh
+./3_tear_down.sh
+```
 
-If `terraform/cluster.auto.tfvars.json` does not exist, Terraform uses the
-default configuration in `terraform/variables.tf`:
+Commands stop on the first failure. The cluster is not destroyed unless both
+exports succeed.
 
-- Three-node M30 replica set
-- AWS `US_EAST_1`
-- MongoDB 8.0
-- Backups enabled
+## Configuration Behavior
 
-`set_up.sh` requires `_cluster_export.json` for the restore step. For a new
-environment without an export, run `terraform -chdir=terraform apply` directly.
+Without `terraform/cluster.auto.tfvars.json`, setup uses the default in
+`terraform/variables.tf`: a three-node M30 replica set in AWS `US_EAST_1` with
+MongoDB 8.0 and backups enabled.
 
-### Existing Cluster
+Teardown writes:
 
-`tear_down.sh` captures the live cluster before destroying it. The generated
-`terraform/cluster.auto.tfvars.json` overrides the M30 defaults on the next
-`set_up.sh` run, recreating the exported topology, instance sizes, disk,
-MongoDB version, backup settings, and Search nodes. `_cluster_export.json` is
-then used to restore collections, regular indexes, Search indexes, and sharding.
+- `config/<CLUSTER_NAME>.auto.tfvars.json` for cluster topology
+- `config/<CLUSTER_NAME>_export.json` for collections, indexes, and sharding
+
+The topology is also copied to `terraform/cluster.auto.tfvars.json`, overriding
+the M30 default on the next setup. Restore reads the matching export from
+`config/`.
 
 ## Scripts
 
 | Script | Purpose |
 | --- | --- |
-| `set_up.sh` | Runs `terraform apply`, then restores collections, indexes, Search indexes, and sharding |
-| `tear_down.sh` | Exports cluster configuration and indexes, then runs `terraform destroy` |
-| `export_cluster_config.js` | Exports Atlas topology and Search node configuration |
-| `export_indexes.js` | Exports collections, regular indexes, Search indexes, and shard keys |
-| `restore_indexes.js` | Restores `_cluster_export.json` with the MongoDB Node.js driver |
+| `1_set_up.sh` | Creates the Atlas cluster with Terraform |
+| `2_restore.sh` | Restores database structures and indexes |
+| `3_tear_down.sh` | Exports the cluster and runs `terraform destroy` |
+| `export_config.sh` | Runs both Node.js export utilities |
+| `utils/export_cluster_config.js` | Exports Atlas topology and Search nodes |
+| `utils/export_indexes.js` | Exports collections, indexes, and shard keys |
+| `utils/restore_indexes.js` | Restores the database export |
