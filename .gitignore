@@ -1,0 +1,14 @@
+# Local secrets — never commit
+env.sh
+
+# Terraform state & generated var files
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.auto.tfvars.json
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/.terraform.tfstate.lock.info
+
+# Exported cluster/index snapshots
+_cluster_export.json
+_all_indexes.json
