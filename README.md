@@ -50,6 +50,27 @@ You can provide the authenticated MongoDB URI directly:
 ./2_restore.sh "mongodb+srv://<user>:<password>@<cluster>/"
 ```
 
+### Export Configuration Only
+
+To capture the current cluster without destroying it, run:
+
+```sh
+./export_config.sh
+```
+
+It exports the cluster topology and Search node settings to `config/` (and
+updates Terraform's auto-loaded configuration), then exports collections,
+indexes, Search indexes, and sharding metadata to
+`config/${CLUSTER_NAME}_export.json`. Set `MONGODB_URI` in `env.sh` first, or
+pass it directly:
+
+```sh
+./export_config.sh "mongodb+srv://<user>:<password>@<cluster>/"
+```
+
+This command only exports configuration; it does not destroy or modify the
+cluster.
+
 ### 3. Tear Down
 
 Export the live configuration and indexes, then destroy the Terraform resources:
