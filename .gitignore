@@ -4,7 +4,7 @@ node_modules/
 package-lock.json
 
 # Cluster configs
-config/*.json
+#config/*.json
 
 # Terraform state & generated var files
 terraform/terraform.tfstate
